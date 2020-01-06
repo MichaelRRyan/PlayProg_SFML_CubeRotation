@@ -4,12 +4,12 @@
 #include <gl/GL.h>
 #include <gl/GLU.h>
 
-#include <Vector3.h>
+#include <Vector3f.h>
+#include <array>
 
 
 using namespace std;
 using namespace sf;
-using namespace gpp;
 
 class Game
 {
@@ -30,4 +30,8 @@ private:
 	Time elapsed;
 
 	float rotationAngle = 0.0f;
+
+	array<cube::Vector3f, 8> m_cubeVertices;
+	array<cube::Vector3f, 8> m_faceColours;
+	array<int, 36> m_cubePoints;
 };
