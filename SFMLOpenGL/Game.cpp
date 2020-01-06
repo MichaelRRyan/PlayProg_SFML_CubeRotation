@@ -2,69 +2,38 @@
 
 bool updatable = false;
 
-Game::Game() : window(VideoMode(800, 600), "OpenGL Cube")
+Game::Game() :
+	window(VideoMode(800, 600), "OpenGL Cube"),
+	m_cubeFaceIndices{
+		{ 1, 5, 6, 2 },
+		{ 4, 0, 3, 7 },
+		{ 3, 2, 6, 7 },
+		{ 0, 4, 5, 1 },
+		{ 0, 1, 2, 3 },
+		{ 4, 7, 6, 5 },
+	}
 {
 	index = glGenLists(2);
 
 	m_faceColours.at(0) = { 1.0f, 0.0f, 0.0f };
 	m_faceColours.at(1) = { 0.0f, 1.0f, 0.0f };
-	m_faceColours.at(2) = { 1.0f, 0.0f, 1.0f };
+	m_faceColours.at(2) = { 0.0f, 0.0f, 1.0f };
 	m_faceColours.at(3) = { 1.0f, 1.0f, 0.0f };
 	m_faceColours.at(4) = { 0.0f, 1.0f, 1.0f };
 	m_faceColours.at(5) = { 1.0f, 0.0f, 1.0f };
-	m_faceColours.at(6) = { 0.5f, 0.5f, 0.5f };
-	m_faceColours.at(7) = { 0.0f, 0.5f, 0.5f };
 
-	m_cubeVertices.at(0) = { -1, -1, 1 };
-	m_cubeVertices.at(1) = { 1, -1, 1 };
-	m_cubeVertices.at(2) = { 1, 1, 1 };
-	m_cubeVertices.at(3) = { -1, 1, 1 };
-	m_cubeVertices.at(4) = { -1, -1, -1 };
-	m_cubeVertices.at(5) = { 1, -1, -1 };
-	m_cubeVertices.at(6) = { 1, 1, -1 };
-	m_cubeVertices.at(7) = { -1, 1, -1 };
+	m_baseCubeCorners.at(0) = { -1, -1, 1 };
+	m_baseCubeCorners.at(1) = { 1, -1, 1 };
+	m_baseCubeCorners.at(2) = { 1, 1, 1 };
+	m_baseCubeCorners.at(3) = { -1, 1, 1 };
+	m_baseCubeCorners.at(4) = { -1, -1, -1 };
+	m_baseCubeCorners.at(5) = { 1, -1, -1 };
+	m_baseCubeCorners.at(6) = { 1, 1, -1 };
+	m_baseCubeCorners.at(7) = { -1, 1, -1 };
 
-	m_cubePoints.at(0) = 0;
-	m_cubePoints.at(1) = 1;
-	m_cubePoints.at(2) = 2;
-	m_cubePoints.at(3) = 2;
-	m_cubePoints.at(4) = 3;
-	m_cubePoints.at(5) = 0;
-
-	m_cubePoints.at(6) = 0;
-	m_cubePoints.at(7) = 3;
-	m_cubePoints.at(8) = 4;
-	m_cubePoints.at(9) = 4;
-	m_cubePoints.at(10) = 3;
-	m_cubePoints.at(11) = 7;
-
-	m_cubePoints.at(12) = 7;
-	m_cubePoints.at(13) = 4;
-	m_cubePoints.at(14) = 5;
-	m_cubePoints.at(15) = 5;
-	m_cubePoints.at(16) = 6;
-	m_cubePoints.at(17) = 7;
-
-	m_cubePoints.at(18) = 5;
-	m_cubePoints.at(19) = 6;
-	m_cubePoints.at(20) = 1;
-	m_cubePoints.at(21) = 1;
-	m_cubePoints.at(22) = 2;
-	m_cubePoints.at(23) = 6;
-
-	m_cubePoints.at(24) = 2;
-	m_cubePoints.at(25) = 3;
-	m_cubePoints.at(26) = 6;
-	m_cubePoints.at(27) = 6;
-	m_cubePoints.at(28) = 7;
-	m_cubePoints.at(29) = 3;
-
-	m_cubePoints.at(30) = 0;
-	m_cubePoints.at(31) = 1;
-	m_cubePoints.at(32) = 5;
-	m_cubePoints.at(33) = 5;
-	m_cubePoints.at(34) = 4;
-	m_cubePoints.at(35) = 0;
+	m_cubeVertices = m_baseCubeCorners;
+	m_rotations = { 0.0f, 0.0f, 0.0f };
+	m_scale = 100.0f;
 }
 
 Game::~Game(){}
@@ -74,11 +43,13 @@ void Game::run()
 
 	initialize();
 
+	sf::Clock runClock;
+	const float FPS{ 60.0f };
+	sf::Time timePerFrame = sf::seconds( 1.0f / FPS);
+	sf::Time timeSinceLastUpdate = sf::Time::Zero;
+
 	Event event;
-
 	while (isRunning){
-
-		cout << "Game running..." << endl;
 
 		while (window.pollEvent(event))
 		{
@@ -87,8 +58,16 @@ void Game::run()
 				isRunning = false;
 			}
 		}
-		update();
-		draw();
+
+		timeSinceLastUpdate += runClock.restart();
+
+		if (timeSinceLastUpdate >= timePerFrame)
+		{
+			update();
+			draw();
+
+			timeSinceLastUpdate -= timePerFrame;
+		}
 	}
 
 }
@@ -96,14 +75,89 @@ void Game::run()
 void Game::initialize()
 {
 	isRunning = true;
-	updatable = true;
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(45.0, window.getSize().x / window.getSize().y, 1.0, 500.0);
 	glMatrixMode(GL_MODELVIEW);
+	glTranslatef(0.0f, 0.0f, -8.0f);
 
+	setupCube();
+}
+
+void Game::update()
+{
+	m_cubeVertices = m_baseCubeCorners;
+
+	// Create a basic identity matrix
+	cube::Matrix3f transformMatrix { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+
+	// Take the user input
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) // Reset the cube to starting transformations
+	{
+		m_rotations = { 0.0f, 0.0f, 0.0f };
+		m_scale = 100.0f;
+	}
+
+	// Scale
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+		m_scale += 10.0f;
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
+		m_scale -= 10.0f;
+
+	// Rotations
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
+		m_rotations.x += 0.5f;
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y))
+		m_rotations.y += 0.5f;
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
+		m_rotations.z += 0.5f;
+
+	// Apply the transformations
+	transformMatrix = transformMatrix * cube::Matrix3f::Scale(m_scale, m_scale);
+
+	transformMatrix = transformMatrix * cube::Matrix3f::RotationX(m_rotations.x);
+	transformMatrix = transformMatrix * cube::Matrix3f::RotationY(m_rotations.y);
+	transformMatrix = transformMatrix * cube::Matrix3f::Rotation(m_rotations.z);
+
+	// Rotate all the cube points
+	for (cube::Vector3f& vector : m_cubeVertices)
+		vector = transformMatrix * vector;
+
+	// Re-set up all the points on the cube with the new coords
+	setupCube();
+}
+
+void Game::draw()
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glCallList(1); // Draw the cube
+	glCallList(2); // Draw the edges
+
+	window.display();
+}
+
+void Game::unload()
+{
+	cout << "Cleaning up" << endl;
+}
+
+bool Game::checkFace(int t_faceIndex)
+{
+	cube::Vector3f distanceVectorOne = m_cubeVertices[m_cubeFaceIndices[t_faceIndex][2]] - m_cubeVertices[m_cubeFaceIndices[t_faceIndex][1]]; // Find the distance from corner B to C
+	cube::Vector3f distanceVectorTwo = m_cubeVertices[m_cubeFaceIndices[t_faceIndex][0]] - m_cubeVertices[m_cubeFaceIndices[t_faceIndex][1]]; // Find the distance from corner B to A
+	cube::Vector3f crossProduct = distanceVectorOne ^ distanceVectorTwo; // Get the cross product of the two distance vectors
+
+	return (crossProduct.z > 0); // Return the result of the checks
+}
+
+void Game::setupCube()
+{
 	// glNewList(index, GL_COMPILE);
 	// Creates a new Display List
 	// Initalizes and Compiled to GPU
@@ -111,19 +165,32 @@ void Game::initialize()
 	glNewList(index, GL_COMPILE);
 	glBegin(GL_TRIANGLES);
 	{
-		float colour = 0;
-
-		for (int i : m_cubePoints)
+		// Loop for each face
+		for (int face = 0; face < 6; face++)
 		{
-			//glColor3f(m_faceColours.at(colour).x, m_faceColours.at(colour).y, m_faceColours.at(colour).z); // Colour
-
-			if (i % 4 == 0)
+			if (checkFace(face))
 			{
-				colour += 0.1f;
-				glColor3f(colour, 0.0f, 0.0f);
-			}
+				// Change the colour depending on the face
+				glColor3f(m_faceColours.at(face).x, m_faceColours.at(face).y, m_faceColours.at(face).z);
 
-			glVertex3f(m_cubeVertices.at(i).x, m_cubeVertices.at(i).y, m_cubeVertices.at(i).z);
+				// First triangle of this face
+				for (int corner = 0; corner < 3; corner++)
+				{
+					glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][corner]).x, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).y, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).z);
+				}
+
+				// Lighten the colour for the second triangle
+				glColor3f(m_faceColours.at(face).x / 2.0f, m_faceColours.at(face).y / 2.0f, m_faceColours.at(face).z / 2.0f);
+
+				// Second triangle of the face
+				for (int corner = 2; corner < 4; corner++)
+				{
+					glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][corner]).x, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).y, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).z);
+				}
+
+				// Finish by going back to start
+				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][0]).x, m_cubeVertices.at(m_cubeFaceIndices[face][0]).y, m_cubeVertices.at(m_cubeFaceIndices[face][0]).z);
+			}
 		}
 	}
 	glEnd();
@@ -132,67 +199,31 @@ void Game::initialize()
 	glNewList(index + 1, GL_COMPILE);
 	glBegin(GL_LINES);
 	{
+		// Set the colour to white
 		glColor3f(1.0f, 1.0f, 1.0f);
 
-		for (int i = 0; i < m_cubePoints.size(); i++)
+		// Loop for each face
+		for (int face = 0; face < 6; face++)
 		{
-			if (i % 2 == 1 && i < 35)
+			if (checkFace(face))
 			{
-				glVertex3f(m_cubeVertices.at(m_cubePoints.at(i + 1)).x, m_cubeVertices.at(m_cubePoints.at(i + 1)).y, m_cubeVertices.at(m_cubePoints.at(i + 1)).z);
-			}
+				// Loop for each of the corners
+				for (int corner = 1; corner < 4; corner++)
+				{
+					glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][corner - 1]).x, m_cubeVertices.at(m_cubeFaceIndices[face][corner - 1]).y, m_cubeVertices.at(m_cubeFaceIndices[face][corner - 1]).z);
+					glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][corner]).x, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).y, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).z);
+				}
 
-			glVertex3f(m_cubeVertices.at(m_cubePoints.at(i)).x, m_cubeVertices.at(m_cubePoints.at(i)).y, m_cubeVertices.at(m_cubePoints.at(i)).z);
+				// Last edge from last vertice to the first
+				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][3]).x, m_cubeVertices.at(m_cubeFaceIndices[face][3]).y, m_cubeVertices.at(m_cubeFaceIndices[face][3]).z);
+				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][0]).x, m_cubeVertices.at(m_cubeFaceIndices[face][0]).y, m_cubeVertices.at(m_cubeFaceIndices[face][0]).z);
+
+				// Diagonal edge between the triangles
+				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][0]).x, m_cubeVertices.at(m_cubeFaceIndices[face][0]).y, m_cubeVertices.at(m_cubeFaceIndices[face][0]).z);
+				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][2]).x, m_cubeVertices.at(m_cubeFaceIndices[face][2]).y, m_cubeVertices.at(m_cubeFaceIndices[face][2]).z);
+			}
 		}
 	}
 	glEnd();
 	glEndList();
-}
-
-void Game::update()
-{
-	elapsed = clock.getElapsedTime();
-
-	if (elapsed.asSeconds() >= (1.0f / 60.0f)) // Update every 60th of a second
-	{
-		clock.restart();
-
-		if (updatable)
-		{
-			rotationAngle += 0.5f;
-
-			if (rotationAngle > 360.0f)
-			{
-				rotationAngle -= 360.0f;
-			}
-		}
-	}
-
-	
-	
-	cout << "Update up" << endl;
-}
-
-void Game::draw()
-{
-	cout << "Drawing" << endl;
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	cout << "Drawing Cube " << endl;
-	glLoadIdentity();
-
-	glTranslatef(0.0f, 0.0f, -5.0f);
-	glRotatef(rotationAngle, 0, 1, 0); // Rotates the camera on Y Axis
-	glRotatef(rotationAngle, 0, 0, 1); // Rotates the camera on Y Axis
-
-	glCallList(1);
-	glCallList(2);
-
-	window.display();
-
-}
-
-void Game::unload()
-{
-	cout << "Cleaning up" << endl;
 }

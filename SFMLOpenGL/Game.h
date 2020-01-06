@@ -5,6 +5,7 @@
 #include <gl/GLU.h>
 
 #include <Vector3f.h>
+#include <Matrix3f.h>
 #include <array>
 
 
@@ -24,14 +25,17 @@ private:
 	void update();
 	void draw();
 	void unload();
+	bool checkFace(int t_faceIndex);
+	void setupCube();
+	void resetCubeTranslations();
 
 	GLuint index;
-	Clock clock;
-	Time elapsed;
 
-	float rotationAngle = 0.0f;
-
+	array<cube::Vector3f, 6> m_faceColours;
+	array<cube::Vector3f, 8> m_baseCubeCorners;
 	array<cube::Vector3f, 8> m_cubeVertices;
-	array<cube::Vector3f, 8> m_faceColours;
-	array<int, 36> m_cubePoints;
+	int m_cubeFaceIndices[6][4]; // Faces and corners
+
+	cube::Vector3f m_rotations;
+	float m_scale;
 };
