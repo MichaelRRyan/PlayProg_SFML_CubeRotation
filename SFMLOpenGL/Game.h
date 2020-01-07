@@ -25,7 +25,6 @@ private:
 	void update();
 	void draw();
 	void unload();
-	bool checkFace(int t_faceIndex);
 	void setupCube();
 
 	GLuint index;

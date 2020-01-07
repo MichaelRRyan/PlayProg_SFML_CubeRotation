@@ -197,15 +197,6 @@ void Game::unload()
 	cout << "Cleaning up" << endl;
 }
 
-bool Game::checkFace(int t_faceIndex)
-{
-	cube::Vector3f distanceVectorOne = m_cubeVertices[m_cubeFaceIndices[t_faceIndex][2]] - m_cubeVertices[m_cubeFaceIndices[t_faceIndex][1]]; // Find the distance from corner B to C
-	cube::Vector3f distanceVectorTwo = m_cubeVertices[m_cubeFaceIndices[t_faceIndex][0]] - m_cubeVertices[m_cubeFaceIndices[t_faceIndex][1]]; // Find the distance from corner B to A
-	cube::Vector3f crossProduct = distanceVectorOne ^ distanceVectorTwo; // Get the cross product of the two distance vectors
-
-	return (crossProduct.z > 0); // Return the result of the checks
-}
-
 void Game::setupCube()
 {
 	// glNewList(index, GL_COMPILE);
@@ -218,30 +209,29 @@ void Game::setupCube()
 		// Loop for each face
 		for (int face = 0; face < 6; face++)
 		{
-			//if (checkFace(face))
+
+			// Change the colour depending on the face
+			glColor3f(m_faceColours.at(face).x, m_faceColours.at(face).y, m_faceColours.at(face).z);
+
+			// First triangle of this face
+			for (int corner = 0; corner < 3; corner++)
 			{
-				// Change the colour depending on the face
-				glColor3f(m_faceColours.at(face).x, m_faceColours.at(face).y, m_faceColours.at(face).z);
-
-				// First triangle of this face
-				for (int corner = 0; corner < 3; corner++)
-				{
-					glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][corner]).x, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).y, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).z);
-				}
-
-				// Lighten the colour for the second triangle
-				glColor3f(m_faceColours.at(face).x / 2.0f, m_faceColours.at(face).y / 2.0f, m_faceColours.at(face).z / 2.0f);
-
-				// Second triangle of the face
-				for (int corner = 2; corner < 4; corner++)
-				{
-					glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][corner]).x, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).y, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).z);
-				}
-
-				// Finish by going back to start
-				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][0]).x, m_cubeVertices.at(m_cubeFaceIndices[face][0]).y, m_cubeVertices.at(m_cubeFaceIndices[face][0]).z);
+				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][corner]).x, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).y, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).z);
 			}
+
+			// Lighten the colour for the second triangle
+			glColor3f(m_faceColours.at(face).x / 2.0f, m_faceColours.at(face).y / 2.0f, m_faceColours.at(face).z / 2.0f);
+
+			// Second triangle of the face
+			for (int corner = 2; corner < 4; corner++)
+			{
+				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][corner]).x, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).y, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).z);
+			}
+
+			// Finish by going back to start
+			glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][0]).x, m_cubeVertices.at(m_cubeFaceIndices[face][0]).y, m_cubeVertices.at(m_cubeFaceIndices[face][0]).z);
 		}
+
 	}
 	glEnd();
 	glEndList();
@@ -255,23 +245,22 @@ void Game::setupCube()
 		// Loop for each face
 		for (int face = 0; face < 6; face++)
 		{
-			//if (checkFace(face))
+
+			// Loop for each of the corners
+			for (int corner = 1; corner < 4; corner++)
 			{
-				// Loop for each of the corners
-				for (int corner = 1; corner < 4; corner++)
-				{
-					glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][corner - 1]).x, m_cubeVertices.at(m_cubeFaceIndices[face][corner - 1]).y, m_cubeVertices.at(m_cubeFaceIndices[face][corner - 1]).z);
-					glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][corner]).x, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).y, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).z);
-				}
-
-				// Last edge from last vertice to the first
-				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][3]).x, m_cubeVertices.at(m_cubeFaceIndices[face][3]).y, m_cubeVertices.at(m_cubeFaceIndices[face][3]).z);
-				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][0]).x, m_cubeVertices.at(m_cubeFaceIndices[face][0]).y, m_cubeVertices.at(m_cubeFaceIndices[face][0]).z);
-
-				// Diagonal edge between the triangles
-				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][0]).x, m_cubeVertices.at(m_cubeFaceIndices[face][0]).y, m_cubeVertices.at(m_cubeFaceIndices[face][0]).z);
-				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][2]).x, m_cubeVertices.at(m_cubeFaceIndices[face][2]).y, m_cubeVertices.at(m_cubeFaceIndices[face][2]).z);
+				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][corner - 1]).x, m_cubeVertices.at(m_cubeFaceIndices[face][corner - 1]).y, m_cubeVertices.at(m_cubeFaceIndices[face][corner - 1]).z);
+				glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][corner]).x, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).y, m_cubeVertices.at(m_cubeFaceIndices[face][corner]).z);
 			}
+
+			// Last edge from last vertice to the first
+			glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][3]).x, m_cubeVertices.at(m_cubeFaceIndices[face][3]).y, m_cubeVertices.at(m_cubeFaceIndices[face][3]).z);
+			glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][0]).x, m_cubeVertices.at(m_cubeFaceIndices[face][0]).y, m_cubeVertices.at(m_cubeFaceIndices[face][0]).z);
+
+			// Diagonal edge between the triangles
+			glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][0]).x, m_cubeVertices.at(m_cubeFaceIndices[face][0]).y, m_cubeVertices.at(m_cubeFaceIndices[face][0]).z);
+			glVertex3f(m_cubeVertices.at(m_cubeFaceIndices[face][2]).x, m_cubeVertices.at(m_cubeFaceIndices[face][2]).y, m_cubeVertices.at(m_cubeFaceIndices[face][2]).z);
+
 		}
 	}
 	glEnd();
