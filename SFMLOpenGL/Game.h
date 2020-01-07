@@ -27,7 +27,6 @@ private:
 	void unload();
 	bool checkFace(int t_faceIndex);
 	void setupCube();
-	void resetCubeTranslations();
 
 	GLuint index;
 
@@ -37,5 +36,8 @@ private:
 	int m_cubeFaceIndices[6][4]; // Faces and corners
 
 	cube::Vector3f m_rotations;
+	cube::Vector3f m_translations;
 	float m_scale;
+
+	bool m_wireframe;
 };

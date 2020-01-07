@@ -11,7 +11,8 @@ Game::Game() :
 		{ 0, 4, 5, 1 },
 		{ 0, 1, 2, 3 },
 		{ 4, 7, 6, 5 },
-	}
+	},
+	m_wireframe{ false }
 {
 	index = glGenLists(2);
 
@@ -33,6 +34,7 @@ Game::Game() :
 
 	m_cubeVertices = m_baseCubeCorners;
 	m_rotations = { 0.0f, 0.0f, 0.0f };
+	m_translations = { 0.0f, 0.0f, 0.0f };
 	m_scale = 100.0f;
 }
 
@@ -56,6 +58,13 @@ void Game::run()
 			if (event.type == Event::Closed)
 			{
 				isRunning = false;
+			}
+			if (event.type == Event::KeyPressed)
+			{
+				if (event.key.code == sf::Keyboard::H)
+				{
+					m_wireframe = !m_wireframe;
+				}
 			}
 		}
 
@@ -83,7 +92,16 @@ void Game::initialize()
 	glMatrixMode(GL_MODELVIEW);
 	glTranslatef(0.0f, 0.0f, -8.0f);
 
+	glEnable(GL_CULL_FACE);
+
 	setupCube();
+
+	std::cout << "Use arror keys to move the cube" << std::endl;
+	std::cout << "Use x, y and z keys to turn the cube in its respective angle" << std::endl;
+	std::cout << "Use left shift to increase the scale of the cube" << std::endl;
+	std::cout << "Use left ctrl to decrease the scale of the cube" << std::endl;
+	std::cout << "Press H to switch between wireframe and regular views" << std::endl;
+	std::cout << "Press space to reset cube transformations" << std::endl;
 }
 
 void Game::update()
@@ -97,6 +115,7 @@ void Game::update()
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) // Reset the cube to starting transformations
 	{
 		m_rotations = { 0.0f, 0.0f, 0.0f };
+		m_translations = { 0.0f, 0.0f, 0.0f };
 		m_scale = 100.0f;
 	}
 
@@ -117,6 +136,19 @@ void Game::update()
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
 		m_rotations.z += 0.5f;
 
+	// Translations
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+		m_translations.x += 0.2f;
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+		m_translations.x -= 0.2f;
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+		m_translations.y += 0.2f;
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+		m_translations.y -= 0.2f;
+
 	// Apply the transformations
 	transformMatrix = transformMatrix * cube::Matrix3f::Scale(m_scale, m_scale);
 
@@ -124,9 +156,21 @@ void Game::update()
 	transformMatrix = transformMatrix * cube::Matrix3f::RotationY(m_rotations.y);
 	transformMatrix = transformMatrix * cube::Matrix3f::Rotation(m_rotations.z);
 
+	float zValues;
+
 	// Rotate all the cube points
-	for (cube::Vector3f& vector : m_cubeVertices)
-		vector = transformMatrix * vector;
+	for (int i = 0; i < m_cubeVertices.size(); i++)
+	{
+		m_cubeVertices[i] = transformMatrix * m_cubeVertices[i];
+
+		// Translations
+		zValues = m_cubeVertices[i].z;
+		m_cubeVertices[i].z = 1;
+		m_cubeVertices[i] = cube::Matrix3f::Translate(m_translations.x, m_translations.y) * m_cubeVertices[i];
+		m_cubeVertices[i].z = zValues;
+	}
+	
+
 
 	// Re-set up all the points on the cube with the new coords
 	setupCube();
@@ -136,8 +180,14 @@ void Game::draw()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glCallList(1); // Draw the cube
-	glCallList(2); // Draw the edges
+	if (!m_wireframe)
+	{
+		glCallList(1); // Draw the cube
+	}
+	else
+	{
+		glCallList(2); // Draw the edges
+	}
 
 	window.display();
 }
@@ -168,7 +218,7 @@ void Game::setupCube()
 		// Loop for each face
 		for (int face = 0; face < 6; face++)
 		{
-			if (checkFace(face))
+			//if (checkFace(face))
 			{
 				// Change the colour depending on the face
 				glColor3f(m_faceColours.at(face).x, m_faceColours.at(face).y, m_faceColours.at(face).z);
@@ -205,7 +255,7 @@ void Game::setupCube()
 		// Loop for each face
 		for (int face = 0; face < 6; face++)
 		{
-			if (checkFace(face))
+			//if (checkFace(face))
 			{
 				// Loop for each of the corners
 				for (int corner = 1; corner < 4; corner++)
